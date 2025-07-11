@@ -2,12 +2,12 @@ services:
   - type: web
     name: bookproject
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn bookvault.wsgi:application
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn bookproject.wsgi:application
     envVars:
       - key: DATABASE_URL
-        value: your_postgres_url_goes_here
-      - key: DJANGO_SECRET_KEY
-        value: li=1#kjh$7@3!180(2axu=^6f1!z6^u*b(s)gl!!*=76^$^*x4
+        value: postgresql://bookvault_gb8r_user:uADFUkkVOf0DHON1YXbtENCVKGOO1Ta0@dpg-d1oan7nfte5s73b2of30-a.oregon-postgres.render.com/bookvault_gb8r
+      - key: cy)$soi3!o5d$$54w27nk9s4vd5&u9b91(8k(+c194v5_by1^1
+        value: w$!1z@3^k#8!2b!9n@4^p!7z@1x!2c!3v@5^l!6m@8^q!0r!2s!4t!6u!8w!0y!2z
       - key: DEBUG
         value: False
