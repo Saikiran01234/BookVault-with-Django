@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bookproject
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn bookvault.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        value: your_postgres_url_goes_here
+      - key: DJANGO_SECRET_KEY
+        value: li=1#kjh$7@3!180(2axu=^6f1!z6^u*b(s)gl!!*=76^$^*x4
+      - key: DEBUG
+        value: False
