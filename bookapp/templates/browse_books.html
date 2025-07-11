@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse Books - BookVault{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4 text-center text-primary">Browse Books</h2>
+  <script>
+    // Highlight active genre button (client-side fallback for demo books)
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const genre = params.get('genre');
+      if (genre) {
+        document.querySelectorAll('.genre-navbar a').forEach(btn => {
+          if (btn.href.includes('genre=' + genre)) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      } else {
+        document.querySelectorAll('.genre-navbar a').forEach(btn => {
+          if (!btn.href.includes('genre=')) btn.classList.add('active');
+          else btn.classList.remove('active');
+        });
+      }
+
+      // AJAX for Add to Cart and Wishlist
+      function handleAjaxError(response) {
+        if (response.status === 403) {
+          alert('Session expired or CSRF error. Please refresh the page and try again.');
+          return true;
+        }
+        if (response.redirected && response.url.includes('login')) {
+          alert('You must be logged in to perform this action. Redirecting to login...');
+          window.location.href = response.url;
+          return true;
+        }
+        return false;
+      }
+      document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const bookId = this.dataset.bookId;
+          fetch('{% url "bookapp:add_to_cart" %}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: 'book_id=' + bookId
+          })
+          .then(res => {
+            if (handleAjaxError(res)) return Promise.reject();
+            return res.json();
+          })
+          .then(data => {
+            if (data && data.success) {
+              this.textContent = 'Added! (' + data.quantity + ')';
+              this.classList.remove('btn-outline-primary');
+              this.classList.add('btn-success');
+              this.disabled = true;
+              // Show discount info
+              let discountMsg = this.parentElement.querySelector('.discount-msg');
+              if (!discountMsg) {
+                discountMsg = document.createElement('span');
+                discountMsg.className = 'discount-msg ms-2 text-success fw-bold';
+                this.parentElement.appendChild(discountMsg);
+              }
+              discountMsg.textContent = `-${data.discount_percent}% off!`;
+              // Update cart total somewhere on the page (if you have a cart total element)
+              const cartTotal = document.getElementById('cart-total');
+              if (cartTotal) {
+                cartTotal.textContent = '₹' + data.cart_total.toFixed(2);
+              }
+            } else if (data && data.error) {
+              alert(data.error);
+            }
+          })
+          .catch(() => {});
+        });
+      });
+      document.querySelectorAll('.add-to-wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const bookId = this.dataset.bookId;
+          fetch('{% url "bookapp:add_to_wishlist" %}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: 'book_id=' + bookId
+          })
+          .then(res => {
+            if (handleAjaxError(res)) return Promise.reject();
+            return res.json();
+          })
+          .then(data => {
+            if (data && data.success) {
+              this.textContent = 'Wishlisted!';
+              this.classList.remove('btn-outline-warning');
+              this.classList.add('btn-info');
+            } else if (data && data.error) {
+              alert(data.error);
+            }
+          })
+          .catch(() => {});
+        });
+      });
+      document.querySelectorAll('.mark-as-read-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const bookId = this.dataset.bookId;
+          fetch('{% url "bookapp:mark_as_read" %}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: 'book_id=' + bookId
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              this.textContent = 'Read';
+              this.classList.remove('btn-outline-success');
+              this.classList.add('btn-secondary');
+              this.disabled = true;
+            } else {
+              alert(data.error || 'Error marking as read.');
+            }
+          });
+        });
+      });
+    });
+  </script>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for book in books %}
+    <div class="col">
+      <div class="card h-100 shadow-sm border-0 d-flex flex-column">
+        {% if book.cover_image %}
+          <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }} cover" style="height: 250px; object-fit: cover" />
+        {% else %}
+          <div class="d-flex align-items-center justify-content-center bg-light" style="height: 250px">
+            <i class="fas fa-book fa-4x text-secondary"></i>
+          </div>
+        {% endif %}
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title text-primary">{{ book.title }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">by {{ book.author }}</h6>
+          <p class="card-text small text-truncate">
+            {{ book.description|truncatechars:100 }}
+          </p>
+          <span class="badge bg-info mt-1 align-self-start">{{ book.get_genre_display }}</span>
+          <div class="mt-3 w-100 d-flex justify-content-between align-items-center">
+            {% if book.id %}
+              {% if request.user.is_authenticated %}
+                {% if book.id in cart_book_ids %}
+                  <button class="btn btn-sm btn-success me-1" disabled>Added to Cart</button>
+                {% else %}
+                  <button class="btn btn-sm btn-outline-primary me-1 add-to-cart-btn" data-book-id="{{ book.id }}">Add to Cart</button>
+                {% endif %}
+                <button class="btn btn-sm btn-outline-warning add-to-wishlist-btn me-1" data-book-id="{{ book.id }}">Wishlist</button>
+                {% if book.id in read_book_ids %}
+                  <button class="btn btn-sm btn-secondary" disabled>Read</button>
+                {% else %}
+                  <button class="btn btn-sm btn-outline-success mark-as-read-btn" data-book-id="{{ book.id }}">Mark as Read</button>
+                {% endif %}
+              {% else %}
+                <button class="btn btn-sm btn-outline-primary me-1" disabled title="Login to add to cart">Add to Cart</button>
+                <button class="btn btn-sm btn-outline-warning me-1" disabled title="Login to add to wishlist">Wishlist</button>
+                <button class="btn btn-sm btn-outline-success" disabled title="Login to mark as read">Mark as Read</button>
+              {% endif %}
+            {% else %}
+              <button class="btn btn-sm btn-outline-primary me-1" disabled title="Demo book – only real books can be added">Add to Cart</button>
+              <button class="btn btn-sm btn-outline-warning me-1" disabled title="Demo book – only real books can be wishlisted">Wishlist</button>
+              <button class="btn btn-sm btn-outline-success" disabled title="Demo book – only real books can be marked as read">Mark as Read</button>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-footer bg-white border-0 text-end pt-0 pb-3 pe-3">
+          <span class="fw-bold text-success fs-5">₹{{ book.price }}</span>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      {% if searched %}
+        <div class="alert alert-warning text-center">
+          Sorry, we don't have that book, but we're trying to add more into our website.
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center">
+          No books available yet. Check back soon!
+        </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

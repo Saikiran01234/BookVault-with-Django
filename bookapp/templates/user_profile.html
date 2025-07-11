@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - BookVault{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row mb-4">
+    <div class="col-12 text-center">
+      <div class="d-flex flex-column align-items-center justify-content-center mb-3">
+        <img src="https://ui-avatars.com/api/?name={{ user_info.username|default:'U' }}&background=0D8ABC&color=fff&size=96" class="rounded-circle shadow" alt="Profile Picture" width="96" height="96" />
+        <h2 class="text-primary mb-1 mt-2"><i class="fas fa-user-circle me-2"></i>{{ user_info.username|default:'User' }}</h2>
+        <div class="text-muted small">{{ user_info.email }}</div>
+        <div class="text-muted small">Joined: {{ user_info.date_joined|date:'M d, Y' }}</div>
+        <div class="text-muted small">Last login: {{ user_info.last_login|date:'M d, Y H:i' }}</div>
+        <div class="mt-2">
+          <a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-secondary me-2">Change Password</a>
+          <a href="{% url 'bookapp:logout' %}" class="btn btn-sm btn-outline-danger">Logout</a>
+        </div>
+      </div>
+      <div class="row justify-content-center mb-3">
+        <div class="col-auto">
+          <div class="card shadow-sm border-0 p-3 text-center">
+            <div class="fw-bold fs-4 text-success">{{ stats.read_count|default:0 }}</div>
+            <div class="small text-muted">Books Read</div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="card shadow-sm border-0 p-3 text-center">
+            <div class="fw-bold fs-4 text-primary">{{ stats.cart_count|default:0 }}</div>
+            <div class="small text-muted">In Cart</div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="card shadow-sm border-0 p-3 text-center">
+            <div class="fw-bold fs-4 text-warning">{{ stats.wishlist_count|default:0 }}</div>
+            <div class="small text-muted">In Wishlist</div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <div class="card shadow-sm border-0 p-3 text-center">
+            <div class="fw-bold fs-5 text-info">{{ stats.most_read_genre.genre|capfirst|default:'-' }}</div>
+            <div class="small text-muted">Fav. Genre</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-success text-white collapsible-header" data-bs-toggle="collapse" data-bs-target="#booksReadCollapse" style="cursor:pointer;">
+          <i class="fas fa-book-reader me-2"></i>Books Read
+          <span class="float-end"><i class="fas fa-chevron-down"></i></span>
+        </div>
+        <div class="collapse" id="booksReadCollapse">
+          <div class="card-body">
+            {% if read_books %}
+              <ul class="list-unstyled mb-0">
+                {% for book in read_books %}
+                <li class="mb-3 d-flex align-items-center">
+                  {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }} cover" style="width: 40px; height: 60px; object-fit: cover;" class="me-2 rounded shadow-sm" />
+                  {% endif %}
+                  <div>
+                    <div class="fw-bold">{{ book.title }}</div>
+                    <div class="small text-muted">by {{ book.author }}</div>
+                  </div>
+                </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">You haven't marked any books as read yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-warning text-dark collapsible-header" data-bs-toggle="collapse" data-bs-target="#wishlistCollapse" style="cursor:pointer;">
+          <i class="fas fa-heart me-2"></i>Wishlist
+          <span class="float-end"><i class="fas fa-chevron-down"></i></span>
+        </div>
+        <div class="collapse" id="wishlistCollapse">
+          <div class="card-body">
+            {% if wishlist_books %}
+              <ul class="list-unstyled mb-0">
+                {% for book in wishlist_books %}
+                <li class="mb-3 d-flex align-items-center">
+                  {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }} cover" style="width: 40px; height: 60px; object-fit: cover;" class="me-2 rounded shadow-sm" />
+                  {% endif %}
+                  <div>
+                    <div class="fw-bold">{{ book.title }}</div>
+                    <div class="small text-muted">by {{ book.author }}</div>
+                  </div>
+                </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">Your wishlist is empty. Add books to your wishlist from the Browse page!</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-primary text-white collapsible-header" data-bs-toggle="collapse" data-bs-target="#cartCollapse" style="cursor:pointer;">
+          <i class="fas fa-shopping-cart me-2"></i>Cart
+          <span class="float-end"><i class="fas fa-chevron-down"></i></span>
+        </div>
+        <div class="collapse" id="cartCollapse">
+          <div class="card-body">
+            {% if cart_items %}
+              <ul class="list-unstyled mb-0">
+                {% for item in cart_items %}
+                <li class="mb-3 d-flex align-items-center" id="cart-item-{{ item.book.id }}">
+                  {% if item.book.cover_image %}
+                    <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }} cover" style="width: 40px; height: 60px; object-fit: cover;" class="me-2 rounded shadow-sm" />
+                  {% endif %}
+                  <div class="flex-grow-1">
+                    <div class="fw-bold">{{ item.book.title }}</div>
+                    <div class="small text-muted">by {{ item.book.author }}</div>
+                    <div class="small d-flex align-items-center">
+                      Qty:
+                      <button type="button" class="btn btn-sm btn-outline-secondary ms-2 me-1 cart-qty-btn" data-book-id="{{ item.book.id }}" data-action="dec">−</button>
+                      <span class="mx-1" id="cart-qty-{{ item.book.id }}">{{ item.quantity }}</span>
+                      <button type="button" class="btn btn-sm btn-outline-secondary ms-1 cart-qty-btn" data-book-id="{{ item.book.id }}" data-action="inc">+</button>
+                      <button type="button" class="btn btn-sm btn-outline-danger ms-3 cart-remove-btn" data-book-id="{{ item.book.id }}">Remove</button>
+                      <span class="text-success ms-2">-{{ item.discount_percent }}% off</span>
+                    </div>
+                  </div>
+                  <div class="fw-bold text-success ms-2" id="cart-item-total-{{ item.book.id }}">₹{{ item.get_total_price|floatformat:2 }}</div>
+                </li>
+                {% endfor %}
+              </ul>
+              <div class="mt-3 text-end">
+                <span class="fw-bold">Total: </span><span class="fw-bold text-primary fs-5" id="cart-section-total">₹{{ cart_total|floatformat:2 }}</span>
+              </div>
+            {% else %}
+              <p class="text-muted">Your cart is empty. Add books to your cart from the Browse page!</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Show a visible alert to confirm JS is running
+  var jsAlert = document.createElement('div');
+  jsAlert.className = 'alert alert-success text-center';
+  jsAlert.textContent = 'Cart JS loaded and running!';
+  document.body.insertBefore(jsAlert, document.body.firstChild);
+  setTimeout(function() { jsAlert.remove(); }, 2000);
+
+  // Collapsible logic (existing)
+  document.querySelectorAll('.collapsible-header').forEach(function(header) {
+    header.addEventListener('click', function() {
+      const chevron = this.querySelector('i.fas.fa-chevron-down, i.fas.fa-chevron-up');
+      const targetId = this.getAttribute('data-bs-target');
+      const target = document.querySelector(targetId);
+      if (target.classList.contains('show')) {
+        target.classList.remove('show');
+        if (chevron) { chevron.classList.remove('fa-chevron-up'); chevron.classList.add('fa-chevron-down'); }
+      } else {
+        target.classList.add('show');
+        if (chevron) { chevron.classList.remove('fa-chevron-down'); chevron.classList.add('fa-chevron-up'); }
+      }
+    });
+  });
+  // Cart quantity update
+  document.querySelectorAll('.cart-qty-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const bookId = this.dataset.bookId;
+      const action = this.dataset.action;
+      const btnRef = this;
+      btnRef.disabled = true;
+      btnRef.classList.add('disabled');
+      fetch('{% url "bookapp:update_cart_quantity" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: 'book_id=' + bookId + '&action=' + action
+      })
+      .then(res => res.json())
+      .then(data => {
+        btnRef.disabled = false;
+        btnRef.classList.remove('disabled');
+        if (data.success) {
+          if (data.removed) {
+            const itemRow = document.getElementById('cart-item-' + bookId);
+            if (itemRow) itemRow.remove();
+          } else {
+            document.getElementById('cart-qty-' + bookId).textContent = data.quantity;
+            document.getElementById('cart-item-total-' + bookId).textContent = '₹' + data.item_total.toFixed(2);
+          }
+          // Update cart total
+          const cartTotal = document.getElementById('cart-section-total');
+          if (cartTotal) cartTotal.textContent = '₹' + data.cart_total.toFixed(2);
+        } else {
+          alert(data.error || 'Error updating cart.');
+        }
+      })
+      .catch(err => {
+        btnRef.disabled = false;
+        btnRef.classList.remove('disabled');
+        console.error('Cart quantity AJAX error:', err);
+        alert('AJAX error updating cart.');
+      });
+    });
+  });
+  // Cart remove
+  document.querySelectorAll('.cart-remove-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const bookId = this.dataset.bookId;
+      fetch('{% url "bookapp:remove_from_cart_profile" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: 'book_id=' + bookId
+      })
+      .then(data => {
+        if (data.success) {
+          // Remove the closest <li> ancestor of the clicked button
+          const itemRow = btn.closest('li');
+          if (itemRow) itemRow.remove();
+          // Update cart total
+          const cartTotal = document.getElementById('cart-section-total');
+          if (cartTotal) cartTotal.textContent = '₹' + data.cart_total.toFixed(2);
+          // If cart is now empty, show the empty message
+          if (document.querySelectorAll('.cart-remove-btn').length === 1) {
+            const cartBody = cartTotal.closest('.card-body');
+            cartBody.innerHTML = '<p class="text-muted">Your cart is empty. Add books to your cart from the Browse page!</p>';
+          }
+        } else {
+          alert(data.error || 'Error removing from cart.');
+        }
+      })
+      .catch(err => {
+        console.error('Cart remove AJAX error:', err);
+        alert('AJAX error removing from cart.');
+      });
+    });
+  });
+});
+</script>
+{% endblock %} 

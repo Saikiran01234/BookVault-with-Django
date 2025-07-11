@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BookVault{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary py-2" style="margin-bottom:0;">
+        <div class="container-fluid flex-nowrap">
+            <a class="navbar-brand" href="{% url 'bookapp:home' %}">
+                <i class="fas fa-book-open me-2"></i>BookVault
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse flex-grow-1" id="navbarNav">
+                <ul class="navbar-nav flex-nowrap">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'bookapp:logout' %}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'bookapp:user_profile' %}">
+                                    <i class="fas fa-user-circle me-2"></i>Profile
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'bookapp:login' %}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'bookapp:register' %}">
+                                <i class="fas fa-user-plus me-1"></i>Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <!-- Search Bar (centered) -->
+                <form class="d-flex mx-auto" action="{% url 'bookapp:browse_books' %}" method="get" style="max-width: 400px; width: 100%;">
+                  <input class="form-control me-2" type="search" name="q" placeholder="Search books..." aria-label="Search">
+                  <button class="btn btn-outline-light" type="submit"><i class="fas fa-search"></i></button>
+                </form>
+                <!-- Genre Dropdown (right of search) -->
+                <ul class="navbar-nav ms-3 flex-nowrap">
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="genreDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="fas fa-layer-group me-1"></i>Genres
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="genreDropdown">
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}">All</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=fiction">Fiction</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=mystery">Mystery</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=fantasy">Fantasy</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=science">Science</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=biography">Biography</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=romance">Romance</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=history">History</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=selfhelp">Self-Help</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=children">Children</a></li>
+                      <li><a class="dropdown-item" href="{% url 'bookapp:browse_books' %}?genre=other">Other</a></li>
+                    </ul>
+                  </li>
+                </ul>
+                <!-- Dark/Light Mode Toggle (far right) -->
+                <button id="theme-toggle" class="btn btn-outline-light ms-3" type="button" title="Toggle dark/light mode">
+                  <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- For mobile, show genres as a separate bar below -->
+    <nav class="navbar navbar-expand genre-navbar py-1 d-lg-none" style="background: #f8f9fa; border-bottom: 1px solid #e3e3e3;">
+      <div class="container">
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{% url 'bookapp:browse_books' %}" class="btn btn-sm btn-outline-primary">All</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=fiction" class="btn btn-sm btn-outline-secondary">Fiction</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=mystery" class="btn btn-sm btn-outline-success">Mystery</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=fantasy" class="btn btn-sm btn-outline-info">Fantasy</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=science" class="btn btn-sm btn-outline-warning">Science</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=biography" class="btn btn-sm btn-outline-dark">Biography</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=romance" class="btn btn-sm btn-outline-danger">Romance</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=history" class="btn btn-sm btn-outline-primary">History</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=selfhelp" class="btn btn-sm btn-outline-success">Self-Help</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=children" class="btn btn-sm btn-outline-info">Children</a>
+          <a href="{% url 'bookapp:browse_books' %}?genre=other" class="btn btn-sm btn-outline-secondary">Other</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="container my-4">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="text-muted mb-0">&copy; 2024 BookVault. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Dark/Light mode toggle
+      function setTheme(dark) {
+        if (dark) {
+          document.body.classList.add('dark-mode');
+          localStorage.setItem('theme', 'dark');
+          if (document.getElementById('theme-toggle'))
+            document.getElementById('theme-toggle').innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+          document.body.classList.remove('dark-mode');
+          localStorage.setItem('theme', 'light');
+          if (document.getElementById('theme-toggle'))
+            document.getElementById('theme-toggle').innerHTML = '<i class="fas fa-moon"></i>';
+        }
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        const theme = localStorage.getItem('theme');
+        setTheme(theme === 'dark');
+        var toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) {
+          toggleBtn.onclick = function() {
+            setTheme(!document.body.classList.contains('dark-mode'));
+          };
+        }
+      });
+    </script>
+    <noscript>
+      <style>
+        body { filter: grayscale(1) !important; }
+      </style>
+      <div class="alert alert-warning text-center">This site works best with JavaScript enabled for dark/light mode and interactivity.</div>
+    </noscript>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

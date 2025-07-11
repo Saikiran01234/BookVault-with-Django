@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Your Wishlist - BookVault{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4 text-primary">Your Wishlist</h2>
+  {% if books %}
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for book in books %}
+    <div class="col" id="wishlist-row-{{ book.id }}">
+      <div class="card h-100 shadow-sm border-0">
+        {% if book.cover_image %}
+        <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }} cover" style="height: 220px; object-fit: cover" />
+        {% else %}
+        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 220px">
+          <i class="fas fa-book fa-3x text-secondary"></i>
+        </div>
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title text-primary">{{ book.title }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">by {{ book.author }}</h6>
+          <span class="badge bg-info mt-1 align-self-start">{{ book.get_genre_display }}</span>
+        </div>
+        <div class="card-footer bg-white border-0 text-end pt-0 pb-3 pe-3">
+          <button class="btn btn-sm btn-danger remove-from-wishlist-btn" data-book-id="{{ book.id }}">Remove</button>
+          <button class="btn btn-sm btn-primary move-to-cart-btn ms-2" data-book-id="{{ book.id }}">Move to Cart</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info">Your wishlist is empty.</div>
+  {% endif %}
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.remove-from-wishlist-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const bookId = this.dataset.bookId;
+      fetch('{% url "bookapp:remove_from_wishlist" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: 'book_id=' + bookId
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const row = document.getElementById('wishlist-row-' + bookId);
+          if (row) row.remove();
+          if (document.querySelectorAll('.remove-from-wishlist-btn').length === 1) {
+            // Last item removed, reload to show empty message
+            location.reload();
+          }
+        } else {
+          alert('Error removing from wishlist.');
+        }
+      });
+    });
+  });
+  document.querySelectorAll('.move-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const bookId = this.dataset.bookId;
+      fetch('{% url "bookapp:move_to_cart" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: 'book_id=' + bookId
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const row = document.getElementById('wishlist-row-' + bookId);
+          if (row) row.remove();
+          if (document.querySelectorAll('.remove-from-wishlist-btn').length === 1) {
+            location.reload();
+          }
+          // Optionally show feedback or update cart total
+          const cartTotal = document.getElementById('cart-total');
+          if (cartTotal && data.cart_total !== undefined) {
+            cartTotal.textContent = '₹' + data.cart_total.toFixed(2);
+          }
+        } else {
+          alert(data.error || 'Error moving to cart.');
+        }
+      });
+    });
+  });
+});
+</script>
+{% endblock %} 
